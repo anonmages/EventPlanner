@@ -4,8 +4,8 @@ import os
 app = Flask(__name__)
 
 DATABASE = {
-    "users": [],
-    "events": [],
+    "users": {},
+    "events": {},
     "registrations": []
 }
 
@@ -15,12 +15,15 @@ app.config['VENUE_MANAGEMENT_URL'] = os.getenv('VENUE_MANAGEMENT_URL')
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
-    DATABASE['users'].append(data)
-    return jsonify(data), 201
+    if 'id' in data:
+        DATABASE['users'][data['id']] = data
+        return jsonify(data), 201
+    else:
+        return jsonify({"error": "Missing user ID"}), 400
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    user = next((user for user in DATABASE['users'] if user['id'] == user_id), None)
+    user = DATABASE['users'].get(user_id)
     if user:
         return jsonify(user)
     return jsonify({"error": "User not found"}), 404
@@ -28,12 +31,15 @@ def get_user(user_id):
 @app.route('/events', methods=['POST'])
 def create_event():
     data = request.get_json()
-    DATABASE['events'].append(data)
-    return jsonify(data), 201
+    if 'id' in data: 
+        DATABASE['events'][data['id']] = data
+        return jsonify(data), 201
+    else:
+        return jsonify({"error": "Missing event ID"}), 400
 
 @app.route('/events/<int:event_id>', methods=['GET'])
 def get_event(event_id):
-    event = next((event for event in DATABASE['events'] if event['id'] == event_id), None)
+    event = DATABASE['events'].get(event_id)
     if event:
         return jsonify(event)
     return jsonify({"error": "Event not found"}), 404
@@ -41,9 +47,11 @@ def get_event(event_id):
 @app.route('/registrations', methods=['POST'])
 def create_registration():
     data = request.get_json()
-    if not next((event for event in DATABASE['events'] if event['id'] == data['event_id']), None):
+    event = DATABASE['events'].get(data.get('event_id'))
+    user = DATABASE['users'].get(data.get('user_id'))
+    if not event:
         return jsonify({"error": "Event not found"}), 404
-    if not next((user for user in DATABASE['users'] if user['id'] == data['user_id']), None):
+    if not user:
         return jsonify({"error": "User not found"}), 404
     DATABASE['registrations'].append(data)
     return jsonify(data), 201
