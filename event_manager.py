@@ -1,7 +1,9 @@
 import os
 import json
 import requests
+import smtplib
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -54,7 +56,7 @@ class EventManager:
         if event_id in self.events:
             for key, value in kwargs.items():
                 if key in self.events[event_id]:
-                    self.events[event_id][key] = value
+                    self.events[event_id][key] = value.isoformat() if isinstance(value, datetime) else value
                     self.save_events()
                 else:
                     print(f"{key} is not a valid property.")
@@ -115,14 +117,37 @@ class EventManager:
             start_time = datetime.fromisoformat(event["start_time"])
             if 0 < (start_time - now).total_seconds() <= hours_before * 3600:
                 reminders.append(f"Reminder: The event '{event['name']}' is starting soon at {start_time.strftime('%Y-%m-%d %H:%M:%S')}.")
+                self.send_email_reminder(event['name'], start_time, event['attendees'])
         return reminders
+
+    def send_email_reminder(self, event_name, event_start_time, attendees):
+        email_address = os.getenv('EMAIL_ADDRESS')
+        email_password = os.getenv('EMAIL_PASSWORD')
+        
+        if not email_address or not email_password:
+            print("Email credentials are missing.")
+            return
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(email_address, email_password)
+            for attendee in attendees:
+                msg = EmailMessage()
+                msg['Subject'] = f'Reminder: Upcoming Event - {event_name}'
+                msg['From'] = email_address
+                msg['To'] = attendee
+                msg.set_content(f'Hello, \n\nThis is a reminder that the event "{event_name}" is starting soon at {event_start_time.strftime("%Y-%m-%d %H:%M:%S")}. \n\nSee you there!')
+                
+                smtp.send_message(msg)
+                print(f"Reminder email sent to {attendee}.")
 
 if __name__ == "__main__":
     event_manager = EventManager()
-    # Example date usage: datetime.now() + timedelta(days=2)
     event_manager.create_event("1", "Tech Conference", "New York", datetime.now(), datetime.now() + timedelta(hours=2))
-    event_manager.add_attendee("1", "John Doe")
-    event_manager.add_attendee("1", "Jane Doe")
+    event_manager.add_attendee("1", "john.doe@example.com")
+    event_manager.add_attendee("1", "jane.doe@example.com")
     print(event_manager.read_event("1"))
     print(event_manager.get_weather_forecast("New York"))
-    print(event_manager.check_event_reminder())
+    reminders = event_manager.check_event_reminder()
+    if reminders:
+        for reminder in reminders:
+            print(reminder)
