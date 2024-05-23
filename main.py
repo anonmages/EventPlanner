@@ -3,68 +3,68 @@ import os
 
 app = Flask(__name__)
 
-DATABASE = {
+event_database = {
     "users": {},
     "events": {},
     "registrations": []
 }
 
-app.config['CATERING_SERVICE_URL'] = os.getenv('CATERING_SERVICE_URL')
-app.config['VENUE_MANAGEMENT_URL'] = os.getenv('VENUE_MANAGEMENT_URL')
+app.config['CATERING_SERVICE_API'] = os.getenv('CATERING_SERVICE_URL')
+app.config['VENUE_MANAGEMENT_API'] = os.getenv('VENUE_MANAGEMENT_URL')
 
 @app.route('/users', methods=['POST'])
-def create_user():
-    data = request.get_json()
-    if 'id' in data:
-        DATABASE['users'][data['id']] = data
-        return jsonify(data), 201
+def add_user():
+    user_data = request.get_json()
+    if 'id' in user_data:
+        event_database['users'][user_data['id']] = user_data
+        return jsonify(user_data), 201
     else:
         return jsonify({"error": "Missing user ID"}), 400
 
 @app.route('/users/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    user = DATABASE['users'].get(user_id)
-    if user:
-        return jsonify(user)
+def fetch_user_details(user_id):
+    user_info = event_database['users'].get(str(user_id))
+    if user_info:
+        return jsonify(user_info)
     return jsonify({"error": "User not found"}), 404
 
 @app.route('/events', methods=['POST'])
-def create_event():
-    data = request.get_json()
-    if 'id' in data: 
-        DATABASE['events'][data['id']] = data
-        return jsonify(data), 201
+def add_event():
+    event_data = request.get_json()
+    if 'id' in event_data:
+        event_database['events'][event_data['id']] = event_data
+        return jsonify(event_data), 201
     else:
         return jsonify({"error": "Missing event ID"}), 400
 
 @app.route('/events/<int:event_id>', methods=['GET'])
-def get_event(event_id):
-    event = DATABASE['events'].get(event_id)
-    if event:
-        return jsonify(event)
+def fetch_event_details(event_id):
+    event_info = event_database['events'].get(str(event_id))
+    if event_info:
+        return jsonify(event_info)
     return jsonify({"error": "Event not found"}), 404
 
 @app.route('/registrations', methods=['POST'])
-def create_registration():
-    data = request.get_json()
-    event = DATABASE['events'].get(data.get('event_id'))
-    user = DATABASE['users'].get(data.get('user_id'))
+def register_for_event():
+    registration_data = request.get_json()
+    event = event_database['events'].get(str(registration_data.get('event_id')))
+    user = event_database['users'].get(str(registration_data.get('user_id')))
     if not event:
         return jsonify({"error": "Event not found"}), 404
     if not user:
         return jsonify({"error": "User not found"}), 404
-    DATABASE['registrations'].append(data)
-    return jsonify(data), 201
+    event_database['registrations'].append(registration_data)
+    return jsonify(registration_data), 201
 
 @app.route('/catering', methods=['GET'])
-def get_catering_services():
-    catering_services = {"services": ["Buffet", "A la carte", "Cocktail"]}
-    return jsonify(catering_services)
+def fetch_catering_options():
+    catering_options = {"services": ["Buffet", "A la carte", "Cocktail"]}
+    return jsonify(catering_options)
 
 @app.route('/venues', methods=['GET'])
-def get_venues():
-    venues = {"list": ["Venue A", "Venue B", "Venue C"]}
-    return jsonify(venues)
+def fetch_venue_options():
+    venue_options = {"list": ["Venue A", "Venue B", "Venue C"]}
+    return jsonify(venue_options)
 
 if __name__ == '__main__':
     app.run(debug=True)
