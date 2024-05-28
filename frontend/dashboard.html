@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Management Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
     <header>
@@ -15,15 +15,10 @@
             <h2>Create New Event</h2>
             <form method="POST" action="/create_event">
                 <label for="event_name">Event Name:</label>
-                <input type="text" id="event_name" name="event_name" required>
-                
-                <label for="event_date">Event Date:</label>
-                <input type="date" id="event_date" name="event_date" required>
-                
-                <label for="event_location">Event Location:</label>
-                <input type="text" id="event_location" name="event_location" required>
-            
-                <input type="submit" value="Create Event">
+                <input id="event_name" name="event_name" required>
+                <label for="location">Location:</label>
+                <input id="event_location" name="event_location" required>
+                <button type="button" onclick="document.getElementById('event_name').value = '';document.getElementById('event_location').value = '';">Clear Input Fields</button>
             </form>
         </section>
         <section>
@@ -43,13 +38,8 @@
         </section>
         <section>
             <h2>Event Analytics</h2>
-            <!-- Sample Analytics Content; can be replaced with dynamic content based on requirements -->
             <div>
             </div>
-        </section>
-        <section>
-            <h2>Welcome to Your Dashboard</h2>
-            <p>Select an option from the menu to get started.</p>
         </section>
     </main>
     <footer>
