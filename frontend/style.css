@@ -26,6 +26,7 @@
     padding: 10px;
     border-radius: 5px;
     margin: 5px 0;
+    transition: background-color 0.3s ease;
 }
 
 .sidebar a:hover {
@@ -36,6 +37,9 @@
     flex-basis: 75%;
     padding: 20px;
     overflow: auto;
+    background-color: #fff; /* Improved contrast for better readability */
+    border-radius: 8px; /* Adds rounded corners for modern look */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Soft shadow for depth */
 }
 
 @media (max-width: 768px) {
@@ -71,7 +75,7 @@
     color: #ecf0f1;
 }
 
-input[type=text], input[type=email], input[type=password], select {
+input[type="text"], input[type="email"], input[type="password"], select {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -90,6 +94,7 @@ button {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
@@ -102,4 +107,18 @@ button:hover {
 
 .text-right {
     text-align: right;
+}
+
+:root {
+    --hover-highlight: #e74c3c; /* Red hover highlight for interactive elements */
+}
+
+a:hover, button:focus {
+    outline: none;
+    background-color: var(--hover-highlight);
+}
+
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus {
+    border-color: var(--hover-highlight);
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
 }
