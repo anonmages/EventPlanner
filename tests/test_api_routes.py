@@ -15,21 +15,29 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
 
+user_cache = {}
+
 @app.route('/users', methods=['POST'])
 def create_user():
     username = request.json['username']
     new_user = User(username=username)
     db.session.add(new_user)
     db.session.commit()
+    user_cache[new_user.id] = new_user.username
     return jsonify({"username": new_user.username}), 201
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    user = User.query.filter_by(id=user_id).first()
-    if user:
-        return jsonify({"username": user.username}), 200
+    if user_id in user_cache:
+        username = user_cache[user_id]
+        return jsonify({"username": username}), 200
     else:
-        return jsonify({"error": "User not found"}), 404
+        user = User.query.filter_by(id=user_id).first()
+        if user:
+            user_cache[user.id] = user.username
+            return jsonify({"username": user.username}), 200
+        else:
+            return jsonify({"error": "User not found"}), 404
 
 class FlaskAppTestCase(unittest.TestCase):
 
@@ -39,6 +47,7 @@ class FlaskAppTestCase(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        user_cache.clear()
 
     def test_create_user(self):
         with app.test_client() as client:
@@ -52,7 +61,7 @@ class FlaskAppTestCase(unittest.TestCase):
             client.post('/users', json={'username': 'testuser2'})
             response = client.get('/users/1')
             data = response.get_json()
-            self.assertEqual(response.status_status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertEqual(data['username'], 'testuser2')
     
     def test_user_not_found(self):
