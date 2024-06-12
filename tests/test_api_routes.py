@@ -2,6 +2,7 @@ import unittest
 import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.exceptions import BadRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,25 +20,36 @@ user_cache = {}
 
 @app.route('/users', methods=['POST'])
 def create_user():
-    username = request.json['username']
-    new_user = User(username=username)
-    db.session.add(new_user)
-    db.session.commit()
-    user_cache[new_user.id] = new_user.username
-    return jsonify({"username": new_user.username}), 201
+    try:
+        username = request.json.get('username')
+        if not username:
+            raise BadRequest('Username is required.')
+        new_user = User(username=username)
+        db.session.add(new_user)
+        db.session.commit()
+        user_cache[new_user.id] = new_user.username
+        return jsonify({"username": new_user.username}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    if user_id in user_cache:
-        username = user_cache[user_id]
-        return jsonify({"username": username}), 200
-    else:
-        user = User.query.filter_by(id=user_id).first()
-        if user:
-            user_cache[user.id] = user.username
-            return jsonify({"username": user.username}), 200
+    try:
+        if user_id in user_cache:
+            username = user_cache[user_id]
+            return jsonify({"username": username}), 200
         else:
-            return jsonify({"error": "User not found"}), 404
+            user = User.query.filter_by(id=user_id).first()
+            if user:
+                user_cache[user.id] = user.username
+                return jsonify({"username": user.username}), 200
+            else:
+                raise NotFound('User not found.')
+    except Exception as e:
+        status_code = 500
+        if isinstance(e, NotFound):
+            status_code = 404
+        return jsonify({"error": str(e)}), status_code
 
 class FlaskAppTestCase(unittest.TestCase):
 
@@ -53,7 +65,7 @@ class FlaskAppTestCase(unittest.TestCase):
         with app.test_client() as client:
             response = client.post('/users', json={'username': 'testuser'})
             data = response.get_json()
-            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.status_response.status_code, 201)
             self.assertEqual(data['username'], 'testuser')
     
     def test_get_user(self):
@@ -67,7 +79,22 @@ class FlaskAppTestCase(unittest.TestCase):
     def test_user_not_found(self):
         with app.test_client() as client:
             response = client.get('/users/999')
+            data = response.get_json()
             self.assertEqual(response.status_code, 404)
+            self.assertEqual(data['error'], 'User not found.')
+
+            self.assertEqual(data['error'], 'User not found.')
+
+class NotFound(Exception):
+    pass
+
+@app.errorhandler(BadRequest)
+def handle_bad_request(error):
+    return jsonify({"error": "Bad Request: " + error.description}), 400
+
+@app.errorhandler(NotFound)
+def handle_not_found(error):
+    return jsonify({"error": str(error)}), 404
 
 if __name__ == '__main__':
     unittest.main()
